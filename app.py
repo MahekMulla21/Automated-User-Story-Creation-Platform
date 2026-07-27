@@ -2,6 +2,9 @@ import streamlit as st
 import tempfile
 import os
 import re
+import json
+import csv
+import io
 from src.generator import generate
 from src.document_converter import convert_document_to_markdown
 
@@ -50,13 +53,17 @@ def parse_acceptance_criteria(raw_text):
 def render_result(result_text):
     """Splits result into User Story / Acceptance Criteria and renders
     Acceptance Criteria as bold Given/When/Then bullets, matching the
-    target format with spacing between scenarios."""
+    target format with spacing between scenarios.
+
+    Returns (header_text, scenarios) so the caller can also offer the
+    parsed content as downloadable files."""
 
     parts = re.split(r'Acceptance Criteria:?', result_text, flags=re.IGNORECASE)
 
     header_text = parts[0].strip()
     st.markdown(header_text)
 
+    scenarios = []
     if len(parts) > 1:
         st.markdown("## Acceptance Criteria")
         scenarios = parse_acceptance_criteria(parts[1])
@@ -68,7 +75,38 @@ def render_result(result_text):
                 f"- **{step['keyword']}** {step['text']}" for step in scenario["steps"]
             )
             st.markdown(bullet_lines)
-            st.markdown("")  
+            st.markdown("")
+
+    return header_text, scenarios
+
+
+def build_json_export(header_text, scenarios):
+    """Builds a JSON string containing the user story and acceptance criteria."""
+    data = {
+        "user_story": header_text,
+        "acceptance_criteria": scenarios
+    }
+    return json.dumps(data, indent=2)
+
+
+def build_csv_export(header_text, scenarios):
+    """Builds a CSV string containing the user story and acceptance criteria."""
+    output = io.StringIO()
+    writer = csv.writer(output)
+
+    writer.writerow(["User Story"])
+    writer.writerow([header_text])
+    writer.writerow([])
+
+    writer.writerow(["Scenario ID", "Scenario Title", "Step Keyword", "Step Text"])
+    for scenario in scenarios:
+        if scenario["steps"]:
+            for step in scenario["steps"]:
+                writer.writerow([scenario["id"], scenario["title"], step["keyword"], step["text"]])
+        else:
+            writer.writerow([scenario["id"], scenario["title"], "", ""])
+
+    return output.getvalue()
 
 
 st.title("Automated User Story  and Acceptance Criteria Creation Platform")
@@ -121,6 +159,25 @@ if st.button("Generate"):
 
     if final_text.strip():
         result = generate(final_text)
-        render_result(result)
+        header_text, scenarios = render_result(result)
+
+        st.markdown("---")
+        download_col1, download_col2 = st.columns(2)
+
+        with download_col1:
+            st.download_button(
+                label="Download as JSON",
+                data=build_json_export(header_text, scenarios),
+                file_name="user_story_and_acceptance_criteria.json",
+                mime="application/json"
+            )
+
+        with download_col2:
+            st.download_button(
+                label="Download as CSV",
+                data=build_csv_export(header_text, scenarios),
+                file_name="user_story_and_acceptance_criteria.csv",
+                mime="text/csv"
+            )
     else:
         st.warning("Please enter a requirement or upload a document.")
