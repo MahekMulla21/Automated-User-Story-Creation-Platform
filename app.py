@@ -1,11 +1,11 @@
-import streamlit as st                                                                                                                                                                       
+import streamlit as st
 import tempfile
 import os
 import re
 import json
 import csv
 import io
-from src.generator import generate
+from src.generator import generate                                                                                                                                                         
 from src.document_converter import convert_document_to_markdown
 
 
@@ -117,6 +117,9 @@ if "req_box" not in st.session_state:
 if "last_uploaded_file" not in st.session_state:
     st.session_state.last_uploaded_file = None
 
+if "generated_result" not in st.session_state:
+    st.session_state.generated_result = None
+
 text_area_slot = st.empty()
 uploader_slot = st.empty()
 
@@ -158,26 +161,31 @@ if st.button("Generate"):
     final_text = st.session_state.get("req_box", "")
 
     if final_text.strip():
-        result = generate(final_text)
-        header_text, scenarios = render_result(result)
-
-        st.markdown("---")
-        download_col1, download_col2 = st.columns(2)
-
-        with download_col1:
-            st.download_button(
-                label="Download as JSON",
-                data=build_json_export(header_text, scenarios),
-                file_name="user_story_and_acceptance_criteria.json",
-                mime="application/json"
-            )
-
-        with download_col2:
-            st.download_button(
-                label="Download as CSV",
-                data=build_csv_export(header_text, scenarios),
-                file_name="user_story_and_acceptance_criteria.csv",
-                mime="text/csv"
-            )
+        st.session_state.generated_result = generate(final_text)
     else:
+        st.session_state.generated_result = None
         st.warning("Please enter a requirement or upload a document.")
+
+if st.session_state.generated_result:
+    header_text, scenarios = render_result(st.session_state.generated_result)
+
+    st.markdown("---")
+    download_col1, download_col2 = st.columns(2)
+
+    with download_col1:
+        st.download_button(
+            label="Download as JSON",
+            data=build_json_export(header_text, scenarios),
+            file_name="user_story_and_acceptance_criteria.json",
+            mime="application/json",
+            key="download_json_btn"
+        )
+
+    with download_col2:
+        st.download_button(
+            label="Download as CSV",
+            data=build_csv_export(header_text, scenarios),
+            file_name="user_story_and_acceptance_criteria.csv",
+            mime="text/csv",
+            key="download_csv_btn"
+        )
