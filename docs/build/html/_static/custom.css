@@ -1,0 +1,16 @@
+/* Widen the content area to fill available space */
+div.document {
+    width: 100%;
+}
+
+div.body {
+    max-width: none;
+}
+
+div.bodywrapper {
+    margin: 0 0 0 230px;  /* keep space for the sidebar width */
+}
+
+div.sphinxsidebar {
+    width: 230px;
+}
