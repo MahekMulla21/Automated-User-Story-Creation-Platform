@@ -1,9 +1,19 @@
 .venv/
+venv/
+env/
+
 .env
+
 __pycache__/
 *.pyc
-.vscode/
+*.pyo
+
 .idea/
-.gitignore
+.vscode/
+
+.streamlit/secrets.toml
+
+.DS_Store
+Thumbs.db
 
 docs/build/
