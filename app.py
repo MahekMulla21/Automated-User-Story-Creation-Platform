@@ -5,8 +5,9 @@ import re
 import json
 import csv
 import io
-from src.generator import generate                                                                                                                                                         
+from src.generator import generate
 from src.document_converter import convert_document_to_markdown
+from src.translator import translate_to_english
 
 
 def parse_acceptance_criteria(raw_text):
@@ -161,7 +162,10 @@ if st.button("Generate"):
     final_text = st.session_state.get("req_box", "")
 
     if final_text.strip():
-        st.session_state.generated_result = generate(final_text)
+        english_text, detected_lang = translate_to_english(final_text)
+        if detected_lang != "en":
+            st.info(f"Detected input language: **{detected_lang}**. Translated to English before generating.")
+        st.session_state.generated_result = generate(english_text)
     else:
         st.session_state.generated_result = None
         st.warning("Please enter a requirement or upload a document.")
