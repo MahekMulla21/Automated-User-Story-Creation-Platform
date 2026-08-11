@@ -1,43 +1,12 @@
-import streamlit as st
 from langdetect import detect, DetectorFactory
-from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
+from deep_translator import GoogleTranslator
 
 
 DetectorFactory.seed = 0
 
-MODEL_NAME = "facebook/nllb-200-distilled-600M"
-TARGET_LANG = "eng_Latn"
-
-
-ISO_TO_NLLB = {
-    "af": "afr_Latn", "am": "amh_Ethi", "ar": "arb_Arab", "az": "azj_Latn",
-    "be": "bel_Cyrl", "bg": "bul_Cyrl", "bn": "ben_Beng", "bs": "bos_Latn",
-    "ca": "cat_Latn", "cs": "ces_Latn", "cy": "cym_Latn", "da": "dan_Latn",
-    "de": "deu_Latn", "el": "ell_Grek", "en": "eng_Latn", "eo": "epo_Latn",
-    "es": "spa_Latn", "et": "est_Latn", "eu": "eus_Latn", "fa": "pes_Arab",
-    "fi": "fin_Latn", "fr": "fra_Latn", "ga": "gle_Latn", "gu": "guj_Gujr",
-    "he": "heb_Hebr", "hi": "hin_Deva", "hr": "hrv_Latn", "hu": "hun_Latn",
-    "hy": "hye_Armn", "id": "ind_Latn", "is": "isl_Latn", "it": "ita_Latn",
-    "ja": "jpn_Jpan", "ka": "kat_Geor", "kk": "kaz_Cyrl", "km": "khm_Khmr",
-    "kn": "kan_Knda", "ko": "kor_Hang", "lt": "lit_Latn", "lv": "lvs_Latn",
-    "mk": "mkd_Cyrl", "ml": "mal_Mlym", "mn": "khk_Cyrl", "mr": "mar_Deva",
-    "ms": "zsm_Latn", "ne": "npi_Deva", "nl": "nld_Latn", "no": "nob_Latn",
-    "pa": "pan_Guru", "pl": "pol_Latn", "pt": "por_Latn", "ro": "ron_Latn",
-    "ru": "rus_Cyrl", "si": "sin_Sinh", "sk": "slk_Latn", "sl": "slv_Latn",
-    "sq": "als_Latn", "sr": "srp_Cyrl", "sv": "swe_Latn", "sw": "swh_Latn",
-    "ta": "tam_Taml", "te": "tel_Telu", "th": "tha_Thai", "tl": "tgl_Latn",
-    "tr": "tur_Latn", "uk": "ukr_Cyrl", "ur": "urd_Arab", "vi": "vie_Latn",
-    "zh-cn": "zho_Hans", "zh-tw": "zho_Hant", "zh": "zho_Hans",
-}
-
-
-@st.cache_resource(show_spinner="Loading translation model (first run only, ~2.4GB)...")
-def _load_translator():
-    """Loads and caches the tokenizer + model for the lifetime of the app
-    process, so it's only downloaded/loaded once, not on every rerun."""
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-    model = AutoModelForSeq2SeqLM.from_pretrained(MODEL_NAME)
-    return tokenizer, model
+# GoogleTranslator (via deep-translator) has a per-request character limit.
+# We chunk safely under that limit.
+MAX_CHUNK_CHARS = 4500
 
 
 def _detect_lang(text: str) -> str:
@@ -49,28 +18,37 @@ def _detect_lang(text: str) -> str:
         return "en"
 
 
-def _translate_chunk(chunk: str, tokenizer, model, nllb_code: str) -> str:
-    """Translates a single chunk of text using model.generate() directly.
+def _chunk_text(text: str, max_chars: int = MAX_CHUNK_CHARS):
+    """Splits text into newline-preserving chunks, each under max_chars.
+    Keeps blank lines out (they carry no translatable content) but
+    preserves line order."""
+    lines = [line for line in text.split("\n") if line.strip()]
 
-    We call generate() ourselves instead of using the transformers
-    pipeline() helper, because newer transformers versions have
-    restructured/removed the "translation" pipeline task alias (this is
-    what throws the "Unknown task translation" KeyError). Calling
-    generate() with forced_bos_token_id is the underlying mechanism the
-    pipeline used anyway, and it's stable across transformers versions.
-    """
-    tokenizer.src_lang = nllb_code
-    inputs = tokenizer(chunk, return_tensors="pt", truncation=True, max_length=512)
+    chunks = []
+    current = []
+    current_len = 0
 
-    target_lang_id = tokenizer.convert_tokens_to_ids(TARGET_LANG)
+    for line in lines:
+        # +1 accounts for the newline that will join this line to the chunk
+        if current and current_len + len(line) + 1 > max_chars:
+            chunks.append("\n".join(current))
+            current = []
+            current_len = 0
+        current.append(line)
+        current_len += len(line) + 1
 
-    generated_tokens = model.generate(
-        **inputs,
-        forced_bos_token_id=target_lang_id,
-        max_length=512,
-    )
+    if current:
+        chunks.append("\n".join(current))
 
-    return tokenizer.batch_decode(generated_tokens, skip_special_tokens=True)[0]
+    return chunks
+
+
+def _translate_chunk(chunk: str, source_lang: str) -> str:
+    """Translates a single chunk of text to English using the Google
+    Translate web endpoint (via deep-translator). No local model is
+    loaded, so this has a negligible memory footprint compared to a
+    local transformer model — well suited to low-RAM deployments."""
+    return GoogleTranslator(source=source_lang, target="en").translate(chunk)
 
 
 def translate_to_english(text: str):
@@ -81,7 +59,12 @@ def translate_to_english(text: str):
         (english_text, detected_iso_code)
 
         If the text is empty or already detected as English, the original
-        text is returned unchanged and the model is never loaded.
+        text is returned unchanged and no translation call is made.
+
+        If translation fails for any reason (network issue, unsupported
+        language, etc.), the original text is returned unchanged along
+        with the detected language code, so the caller can decide how to
+        proceed instead of crashing.
     """
     if not text or not text.strip():
         return text, "en"
@@ -90,17 +73,18 @@ def translate_to_english(text: str):
     if iso_code == "en":
         return text, "en"
 
-    nllb_code = ISO_TO_NLLB.get(iso_code, "eng_Latn")
-
-    tokenizer, model = _load_translator()
-
-    chunks = [chunk for chunk in text.split("\n") if chunk.strip()]
-
+    chunks = _chunk_text(text)
     if not chunks:
         return text, iso_code
 
-    translated_chunks = [
-        _translate_chunk(chunk, tokenizer, model, nllb_code) for chunk in chunks
-    ]
+    try:
+        translated_chunks = [
+            _translate_chunk(chunk, iso_code) for chunk in chunks
+        ]
+    except Exception:
+        # Translation failed (e.g. unsupported language code, network
+        # error, rate limit) — fall back to the original text rather
+        # than raising and breaking the app.
+        return text, iso_code
 
     return "\n".join(translated_chunks), iso_code
