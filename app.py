@@ -110,7 +110,27 @@ def build_csv_export(header_text, scenarios):
     return output.getvalue()
 
 
-st.title("Automated User Story  and Acceptance Criteria Creation Platform")
+def build_md_export(header_text, scenarios):
+    """Builds a Markdown string containing the user story and acceptance criteria,
+    matching the format rendered in the app."""
+    lines = []
+    lines.append(header_text)
+    lines.append("")
+
+    if scenarios:
+        lines.append("## Acceptance Criteria")
+        lines.append("")
+        for scenario in scenarios:
+            lines.append(f"**Scenario {scenario['id']}: {scenario['title']}**")
+            lines.append("")
+            for step in scenario["steps"]:
+                lines.append(f"- **{step['keyword']}** {step['text']}")
+            lines.append("")
+
+    return "\n".join(lines)
+
+
+st.title("Automated User Story Creation Platform")
 
 if "req_box" not in st.session_state:
     st.session_state.req_box = ""
@@ -174,7 +194,7 @@ if st.session_state.generated_result:
     header_text, scenarios = render_result(st.session_state.generated_result)
 
     st.markdown("---")
-    download_col1, download_col2 = st.columns(2)
+    download_col1, download_col2, download_col3 = st.columns(3)
 
     with download_col1:
         st.download_button(
@@ -192,4 +212,13 @@ if st.session_state.generated_result:
             file_name="user_story_and_acceptance_criteria.csv",
             mime="text/csv",
             key="download_csv_btn"
+        )
+
+    with download_col3:
+        st.download_button(
+            label="Download as Markdown",
+            data=build_md_export(header_text, scenarios),
+            file_name="user_story_and_acceptance_criteria.md",
+            mime="text/markdown",
+            key="download_md_btn"
         )
