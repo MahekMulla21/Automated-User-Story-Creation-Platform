@@ -4,8 +4,6 @@ from deep_translator import GoogleTranslator
 
 DetectorFactory.seed = 0
 
-# GoogleTranslator (via deep-translator) has a per-request character limit.
-# We chunk safely under that limit.
 MAX_CHUNK_CHARS = 4500
 
 
@@ -82,9 +80,6 @@ def translate_to_english(text: str):
             _translate_chunk(chunk, iso_code) for chunk in chunks
         ]
     except Exception:
-        # Translation failed (e.g. unsupported language code, network
-        # error, rate limit) — fall back to the original text rather
-        # than raising and breaking the app.
         return text, iso_code
 
     return "\n".join(translated_chunks), iso_code
