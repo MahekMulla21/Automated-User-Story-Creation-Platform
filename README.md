@@ -94,6 +94,7 @@ GitHub
 **Deployment**
 
 Example start command:
+
 streamlit run app.py --server.port $PORT --server.address 0.0.0.0
 
 Current Development Focus
@@ -107,12 +108,19 @@ Future Improvements
 Some planned improvements include:
 
 Epic and Feature level classification
+
 User Story prioritization
+
 Duplicate story detection
+
 Requirement-to-story traceability
+
 Story point estimation
+
 Automated test case generation
+
 Exporting generated stories to Excel or other formats
+
 Integration with project management tools
 
 Author
@@ -124,15 +132,15 @@ BE Computer Engineering
 An AI-based application that converts software requirements into User Stories and Acceptance Criteria using Google Gemini LLMs.
 
 Features
-AI-based requirement analysis
-Generates multiple meaningful User Stories
-Generates Acceptance Criteria
-Supports multilingual requirements with English translation
-Supports document-based requirements
-Error handling and Gemini API retry mechanism
-Test case development and validation
-Deployable using Render
-Tech Stack
+ -AI-based requirement analysis
+ -Generates multiple meaningful User Stories
+ -Generates Acceptance Criteria
+ -Supports multilingual requirements with English translation
+ -Supports document-based requirements
+ -Error handling and Gemini API retry mechanism
+ -Test case development and validation
+ -Deployable using Render
+ -Tech Stack
 
 Python • Streamlit • Google Gemini • langdetect • deep-translator • MarkItDown • Git • GitHub • Render
 
