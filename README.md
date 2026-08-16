@@ -25,122 +25,96 @@ Each generated User Story can then be associated with its corresponding Acceptan
 - Handle API and processing errors without exposing technical errors directly to users.
 - Support deployment of the application as a web service.
 
-**Multilingual Requirement Support:**
+## Multilingual Requirement Support
 
-The application was initially designed to work with English software requirements. A translation module was later added to allow users to provide requirements in multiple languages.
-The detected non-English requirement is translated into English before it is passed to the User Story generation process.
+- Initially designed to accept English software requirements.
+- Added a translation module for multilingual requirements.
+- Detects the language automatically.
+- Translates non-English requirements into English.
+- Passes the translated requirement to the User Story generation pipeline.
 
-**AI Integration:**
+## AI Integration
 
-Google Gemini is used as the main language model for requirement analysis and User Story generation.
+- Uses Google Gemini LLM for requirement analysis.
+- Identifies relevant functional areas.
+- Breaks complex requirements into smaller features.
+- Generates multiple User Stories.
+- Generates Acceptance Criteria for each story.
+- Avoids unnecessary duplicate User Stories.
+- Keeps generated content relevant to the original requirement.
+- Includes retry and error-handling logic for temporary Gemini API failures.
 
-The application uses structured prompts to guide the model to:
+## Document Processing
 
-Understand the given requirement.
-Identify relevant functional areas.
-Break complex requirements into smaller features.
-Generate separate User Stories.
-Generate Acceptance Criteria for the stories.
-Avoid unnecessary duplicate stories.
-Keep the generated content related to the original requirement.
+- Supports requirement input through supported documents.
+- Extracts requirement content from documents.
+- Passes extracted content through the same processing pipeline.
+- Reduces the need for manually entering lengthy requirements.
 
-Error handling and retry logic have also been added for temporary Gemini API failures.
+## Testing
 
-**Document Processing:**
+- Requirement input validation.
+- Language detection testing.
+- Translation testing.
+- Multiple User Story generation testing.
+- Acceptance Criteria testing.
+- Document processing testing.
+- Gemini API failure testing.
+- Error-handling testing.
+- End-to-end workflow testing.
+- Deployment testing.
+- Positive and negative test cases.
 
-The application also includes document processing functionality for extracting requirement content from supported files.
-The extracted content is passed through the same requirement processing pipeline so that users can work with requirements provided as documents instead of entering everything manually.
+## Technologies Used
 
-**Testing**
+- Python
+- Streamlit
+- Google Gemini LLM
+- Google GenAI SDK
+- langdetect
+- deep-translator
+- MarkItDown
+- Git
+- GitHub
+- Render
 
-Testing is being carried out alongside development to verify the different modules of the application.
+## Deployment
 
-The test cases cover areas such as:
+- Deployed as a Render Web Service.
+- Uses environment variables for the Gemini API key.
+- Start command:
+  `streamlit run app.py --server.port $PORT --server.address 0.0.0.0`
 
-Requirement input validation
-Language detection
-Translation
-Multiple User Story generation
-Acceptance Criteria generation
-Document processing
-Gemini API failures
-Error handling
-End-to-end workflow
-Deployment testing
+## Current Development Focus
 
-Both valid and invalid inputs are considered while preparing the test cases.
+- Generate multiple meaningful User Stories from a single complex requirement.
+- Identify functional areas and features from requirements.
+- Improve User Story coverage.
+- Avoid duplicate or irrelevant stories.
+- Generate Acceptance Criteria for each story.
+- Prepare and execute project test cases.
 
-**Technologies Used**
+## Future Improvements
 
-Language
-Python
-Application
-Streamlit
+- Epic and Feature level classification.
+- User Story prioritization.
+- Duplicate Story detection.
+- Requirement-to-Story traceability.
+- Story point estimation.
+- Automated test case generation.
+- Export to Excel and other formats.
+- Integration with project management tools.
 
-AI
-Google Gemini LLM
-Google GenAI SDK
-Translation & NLP
-langdetect
-deep-translator
+## Project Objective
 
-Document Processing
-MarkItDown
+- Convert software requirements into structured User Stories and Acceptance Criteria.
+- Reduce manual effort in the requirements analysis process.
+- Improve coverage of complex software requirements using AI.
 
-Version Control
-Git
-GitHub
+## Author
 
-**Deployment**
-
-Example start command:
-
-streamlit run app.py --server.port $PORT --server.address 0.0.0.0
-
-Current Development Focus
-
-The current development work is focused on improving the generation process so that a single complex software requirement can produce a complete set of meaningful User Stories rather than only one User Story.
-
-Along with this, test cases are being prepared and executed to verify the correctness of the generated results and the overall application workflow.
-
-Future Improvements
-
-Some planned improvements include:
-
-Epic and Feature level classification
-
-User Story prioritization
-
-Duplicate story detection
-
-Requirement-to-story traceability
-
-Story point estimation
-
-Automated test case generation
-
-Exporting generated stories to Excel or other formats
-
-Integration with project management tools
-
-Author
-
-Mahek Mulla
+**Mahek Mulla**
 
 BE Computer Engineering
-
-An AI-based application that converts software requirements into User Stories and Acceptance Criteria using Google Gemini LLMs.
-
-Features
- -AI-based requirement analysis
- -Generates multiple meaningful User Stories
- -Generates Acceptance Criteria
- -Supports multilingual requirements with English translation
- -Supports document-based requirements
- -Error handling and Gemini API retry mechanism
- -Test case development and validation
- -Deployable using Render
- -Tech Stack
-
 Python • Streamlit • Google Gemini • langdetect • deep-translator • MarkItDown • Git • GitHub • Render
 
