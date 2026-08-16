@@ -116,7 +116,9 @@ Exporting generated stories to Excel or other formats
 Integration with project management tools
 
 Author
+
 Mahek Mulla
+
 BE Computer Engineering
 
 An AI-based application that converts software requirements into User Stories and Acceptance Criteria using Google Gemini LLMs.
@@ -134,8 +136,3 @@ Tech Stack
 
 Python • Streamlit • Google Gemini • langdetect • deep-translator • MarkItDown • Git • GitHub • Render
 
-
-Developed by Mahek Mulla
-        |
-        v
-Acceptance Criteria
