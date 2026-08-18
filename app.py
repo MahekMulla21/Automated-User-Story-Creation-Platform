@@ -1,7 +1,6 @@
 import streamlit as st
 import tempfile
 import os
-import re
 import json
 import csv
 import io
@@ -10,120 +9,104 @@ from src.document_converter import convert_document_to_markdown
 from src.translator import translate_to_english
 
 
-def parse_acceptance_criteria(raw_text):
-    """Parses raw Given/When/Then/And text into structured scenarios.
-    'And' clauses are merged into the preceding Given/When/Then step
-    instead of being treated as separate bullets."""
+def render_result(result):
+    """
+    Renders the generator.generate() result: ALL User Stories first,
+    then ALL Acceptance Criteria below them.
 
-    scenario_blocks = [s.strip() for s in re.split(r'Scenario\s*\d*\s*:', raw_text, flags=re.IGNORECASE) if s.strip()]
+    CHANGE: previously this parsed raw markdown text with a regex-based
+    Given/When/Then parser (parse_acceptance_criteria). generate() now
+    returns pre-structured JSON, so no parsing happens here at all.
+    """
+    stories = result["stories"]
+    criteria = result["criteria"]
+    coverage = result["coverage"]
 
-    scenarios = []
-    for index, block in enumerate(scenario_blocks):
-        title_match = re.match(r'^(.*?)(?=\b(Given|When|Then|And)\b)', block, flags=re.IGNORECASE | re.DOTALL)
-        title = title_match.group(1).strip() if title_match and title_match.group(1).strip() else f"Scenario {index + 1}"
+    st.markdown(
+        f"**Epics:** {coverage['epics']}  |  "
+        f"**Features:** {coverage['features']}  |  "
+        f"**User Stories:** {coverage['stories']}"
+    )
+    st.markdown("---")
 
-        body_text = block[len(title):].strip() if title_match else block
-
-        step_pattern = re.compile(
-            r'\b(Given|When|Then|And)\b\s+(.*?)(?=\b(Given|When|Then|And)\b|$)',
-            flags=re.IGNORECASE | re.DOTALL
+    st.markdown("## User Stories")
+    for s in stories:
+        st.markdown(
+            f"**{s['id']} — {s['title']}**  \n"
+            f"*Epic: {s['epic']} · Feature: {s['feature']} · Priority: {s['priority']}*"
         )
+        st.markdown(s["story"])
+        st.markdown("")
 
-        steps = []
-        for match in step_pattern.finditer(body_text):
-            keyword = match.group(1).capitalize()
-            text = match.group(2).strip().rstrip('.')
-
-            if not text:
-                continue
-
-            if keyword == "And" and steps:
-                steps[-1]["text"] += f" and {text}"
-            else:
-                steps.append({"keyword": keyword, "text": text})
-
-        scenarios.append({
-            "id": index + 1,
-            "title": title,
-            "steps": steps
-        })
-
-    return scenarios
-
-
-def render_result(result_text):
-    """Splits result into User Story / Acceptance Criteria and renders
-    Acceptance Criteria as bold Given/When/Then bullets, matching the
-    target format with spacing between scenarios.
-
-    Returns (header_text, scenarios) so the caller can also offer the
-    parsed content as downloadable files."""
-
-    parts = re.split(r'Acceptance Criteria:?', result_text, flags=re.IGNORECASE)
-
-    header_text = parts[0].strip()
-    st.markdown(header_text)
-
-    scenarios = []
-    if len(parts) > 1:
-        st.markdown("## Acceptance Criteria")
-        scenarios = parse_acceptance_criteria(parts[1])
-
-        for scenario in scenarios:
-            st.markdown(f"**Scenario {scenario['id']}: {scenario['title']}**")
-
+    st.markdown("---")
+    st.markdown("## Acceptance Criteria")
+    for c in criteria:
+        st.markdown(f"**{c['id']}**")
+        for scenario in c["scenarios"]:
+            st.markdown(f"**Scenario: {scenario.get('scenario', '')}**")
             bullet_lines = "\n".join(
-                f"- **{step['keyword']}** {step['text']}" for step in scenario["steps"]
+                f"- **{step['keyword']}** {step['text']}"
+                for step in scenario.get("steps", [])
             )
             st.markdown(bullet_lines)
             st.markdown("")
 
-    return header_text, scenarios
 
-
-def build_json_export(header_text, scenarios):
-    """Builds a JSON string containing the user story and acceptance criteria."""
+def build_json_export(result):
+    """Builds a JSON string containing all user stories and acceptance criteria."""
     data = {
-        "user_story": header_text,
-        "acceptance_criteria": scenarios
+        "coverage": result["coverage"],
+        "user_stories": result["stories"],
+        "acceptance_criteria": result["criteria"],
     }
     return json.dumps(data, indent=2)
 
 
-def build_csv_export(header_text, scenarios):
-    """Builds a CSV string containing the user story and acceptance criteria."""
+def build_csv_export(result):
+    """Builds a CSV string containing all user stories and acceptance criteria."""
     output = io.StringIO()
     writer = csv.writer(output)
 
-    writer.writerow(["User Story"])
-    writer.writerow([header_text])
-    writer.writerow([])
+    writer.writerow(["Story ID", "Epic", "Feature", "Title", "Priority", "User Story"])
+    for s in result["stories"]:
+        writer.writerow([s["id"], s["epic"], s["feature"], s["title"], s["priority"], s["story"]])
 
-    writer.writerow(["Scenario ID", "Scenario Title", "Step Keyword", "Step Text"])
-    for scenario in scenarios:
-        if scenario["steps"]:
-            for step in scenario["steps"]:
-                writer.writerow([scenario["id"], scenario["title"], step["keyword"], step["text"]])
-        else:
-            writer.writerow([scenario["id"], scenario["title"], "", ""])
+    writer.writerow([])
+    writer.writerow(["Story ID", "Scenario", "Step Keyword", "Step Text"])
+    for c in result["criteria"]:
+        for scenario in c["scenarios"]:
+            steps = scenario.get("steps", [])
+            if steps:
+                for step in steps:
+                    writer.writerow([c["id"], scenario.get("scenario", ""), step["keyword"], step["text"]])
+            else:
+                writer.writerow([c["id"], scenario.get("scenario", ""), "", ""])
 
     return output.getvalue()
 
 
-def build_md_export(header_text, scenarios):
-    """Builds a Markdown string containing the user story and acceptance criteria,
-    matching the format rendered in the app."""
+def build_md_export(result):
+    """Builds a Markdown string with all user stories, then all acceptance
+    criteria, matching the order rendered in the app."""
     lines = []
-    lines.append(header_text)
+    lines.append("## User Stories")
     lines.append("")
-
-    if scenarios:
-        lines.append("## Acceptance Criteria")
+    for s in result["stories"]:
+        lines.append(f"**{s['id']} — {s['title']}**  ")
+        lines.append(f"*Epic: {s['epic']} · Feature: {s['feature']} · Priority: {s['priority']}*")
         lines.append("")
-        for scenario in scenarios:
-            lines.append(f"**Scenario {scenario['id']}: {scenario['title']}**")
+        lines.append(s["story"])
+        lines.append("")
+
+    lines.append("## Acceptance Criteria")
+    lines.append("")
+    for c in result["criteria"]:
+        lines.append(f"**{c['id']}**")
+        lines.append("")
+        for scenario in c["scenarios"]:
+            lines.append(f"**Scenario: {scenario.get('scenario', '')}**")
             lines.append("")
-            for step in scenario["steps"]:
+            for step in scenario.get("steps", []):
                 lines.append(f"- **{step['keyword']}** {step['text']}")
             lines.append("")
 
@@ -187,7 +170,7 @@ if st.button("Generate"):
             st.info(f"Detected input language: **{detected_lang}**. Translated to English before generating.")
 
         try:
-            with st.spinner("Generating user story..."):
+            with st.spinner("Generating user stories..."):
                 st.session_state.generated_result = generate(english_text)
         except RuntimeError as e:
             st.session_state.generated_result = None
@@ -197,7 +180,8 @@ if st.button("Generate"):
         st.warning("Please enter a requirement or upload a document.")
 
 if st.session_state.generated_result:
-    header_text, scenarios = render_result(st.session_state.generated_result)
+    result = st.session_state.generated_result
+    render_result(result)
 
     st.markdown("---")
     download_col1, download_col2, download_col3 = st.columns(3)
@@ -205,8 +189,8 @@ if st.session_state.generated_result:
     with download_col1:
         st.download_button(
             label="Download as JSON",
-            data=build_json_export(header_text, scenarios),
-            file_name="user_story_and_acceptance_criteria.json",
+            data=build_json_export(result),
+            file_name="user_stories_and_acceptance_criteria.json",
             mime="application/json",
             key="download_json_btn"
         )
@@ -214,8 +198,8 @@ if st.session_state.generated_result:
     with download_col2:
         st.download_button(
             label="Download as CSV",
-            data=build_csv_export(header_text, scenarios),
-            file_name="user_story_and_acceptance_criteria.csv",
+            data=build_csv_export(result),
+            file_name="user_stories_and_acceptance_criteria.csv",
             mime="text/csv",
             key="download_csv_btn"
         )
@@ -223,8 +207,8 @@ if st.session_state.generated_result:
     with download_col3:
         st.download_button(
             label="Download as Markdown",
-            data=build_md_export(header_text, scenarios),
-            file_name="user_story_and_acceptance_criteria.md",
+            data=build_md_export(result),
+            file_name="user_stories_and_acceptance_criteria.md",
             mime="text/markdown",
             key="download_md_btn"
         )
