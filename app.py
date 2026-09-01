@@ -5,9 +5,7 @@ import os
 import tempfile
 import time
 from datetime import datetime
-
 import streamlit as st
-
 from src.generator import generate
 from src.document_converter import convert_document_to_markdown
 from src.translator import translate_to_english
