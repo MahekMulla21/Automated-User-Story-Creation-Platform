@@ -169,6 +169,18 @@ st.markdown(
         box-shadow: 0 0 0 3px rgba(109,93,246,0.15) !important;
     }
 
+     /* ---------- Top header bar (was default black) ---------- */
+    header[data-testid="stHeader"] {
+        background: #F4F6FB !important;
+        height: 0px;
+    }
+    div[data-testid="stDecoration"] {
+        background: transparent !important;
+    }
+    div[data-testid="stToolbar"] {
+        background: #F4F6FB !important;
+    }
+
     /* ---------- Panels ---------- */
     .panel {
         background:#FFFFFF; border:1px solid #EAECF3; border-radius:14px;
