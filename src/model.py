@@ -29,7 +29,7 @@ client = genai.Client(
 
 MODELS = [
     "gemini-3.5-flash-lite",
-    "gemini-2.5-flash",
+    "gemini-3.6-flash",
 ]
 
 
@@ -42,7 +42,7 @@ MODEL_CONFIGS = {
         temperature=0.4,
     ),
 
-    "gemini-2.5-flash": types.GenerateContentConfig(
+    "gemini-3.6-flash": types.GenerateContentConfig(
         response_mime_type="application/json",
         max_output_tokens=32768,
         temperature=0.4,
@@ -63,7 +63,7 @@ def get_response(prompt: str) -> str:
 
     Model behavior:
         1. Try gemini-3.5-flash-lite.
-        2. If unavailable/quota exceeded, move to gemini-2.5-flash.
+        2. If unavailable/quota exceeded, move to gemini-3.6-flash.
         3. Retry temporary 503 errors.
         4. Return the generated response as text.
         5. Raise a clean error if all models fail.
@@ -340,5 +340,3 @@ def _get_finish_reason(response) -> str:
 
     except Exception:
         return ""
-
-
