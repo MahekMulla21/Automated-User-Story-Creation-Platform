@@ -511,6 +511,16 @@ div[data-testid="stButton"] button[kind="primary"] {
         border:none; font-weight:600; border-radius:9px; padding:0.6rem 1rem;
         box-shadow: 0 4px 14px rgba(91,140,255,0.3);
     }
+    /* ---------- Fix clipped glow on primary buttons sitting in slim containers ---------- */
+    div[data-testid="column"] {
+        overflow: visible !important;
+    }
+    div[data-testid="stVerticalBlock"] {
+        overflow: visible !important;
+    }
+    div.stButton > button[kind="primary"] {
+        margin-top: 4px;
+    }
 
     /* ---------- Download buttons ---------- */
     div[data-testid="stDownloadButton"] > button,
