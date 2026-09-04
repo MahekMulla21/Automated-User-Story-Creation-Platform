@@ -1,0 +1,21 @@
+TC_ID,Requirement
+TC01,User can register and login into the system
+TC02,User can reset password through email
+TC03,Hospital appointment booking system
+TC04,E-commerce shopping platform
+TC05,Library management system
+TC06,Banking transaction portal
+TC07,Inventory management system
+TC08,Employee attendance system
+TC09,Flight reservation system
+TC10,Hotel booking system
+TC11,Online food delivery application
+TC12,Student result management system
+TC13,Online examination portal
+TC14,Vehicle rental management system
+TC15,Insurance claim processing system
+TC16,Customer support ticket system
+TC17,Payroll management system
+TC18,Doctor appointment booking system
+TC19,Online learning platform
+TC20,Courier tracking system

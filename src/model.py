@@ -12,23 +12,30 @@ client = genai.Client(
 )
 
 MODELS = [
+    "gemini-3.5-flash-lite",
     "gemini-2.5-flash",
-    "gemini-2.0-flash",
 ]
 
 
+
+
 MODEL_CONFIGS = {
+
+    "gemini-3.5-flash-lite": types.GenerateContentConfig(
+        response_mime_type="application/json",
+        max_output_tokens=32768,
+        temperature=0.4,
+    ),
+
     "gemini-2.5-flash": types.GenerateContentConfig(
         response_mime_type="application/json",
         max_output_tokens=32768,
         temperature=0.4,
     ),
-    "gemini-2.0-flash": types.GenerateContentConfig(
-        response_mime_type="application/json",
-        max_output_tokens=8192,
-        temperature=0.4,
-    ),
+
 }
+
+
 
 MAX_ATTEMPTS_PER_MODEL = 3
 BASE_DELAY_SECONDS = 2
