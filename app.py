@@ -511,15 +511,19 @@ div[data-testid="stButton"] button[kind="primary"] {
         border:none; font-weight:600; border-radius:9px; padding:0.6rem 1rem;
         box-shadow: 0 4px 14px rgba(91,140,255,0.3);
     }
-    /* ---------- Fix clipped glow on primary buttons sitting in slim containers ---------- */
-    div[data-testid="column"] {
-        overflow: visible !important;
-    }
-    div[data-testid="stVerticalBlock"] {
-        overflow: visible !important;
-    }
+
+    /* ---------- Fix clipped glow on primary buttons sitting in slim containers ----------
+       NOTE: this used to force `overflow: visible !important` on EVERY
+       [data-testid="column"] and [data-testid="stVerticalBlock"] on the page. That also
+       overrode the inline `overflow: auto` Streamlit sets on the fixed-height results
+       container (st.container(height=480)) used for the User Stories / Acceptance
+       Criteria / JSON Output / Preview tabs, so that content spilled out of its box and
+       visually collided with the download buttons rendered underneath it. Fixed by only
+       giving primary buttons a little vertical margin, instead of touching overflow on
+       their parent containers. */
     div.stButton > button[kind="primary"] {
         margin-top: 4px;
+        margin-bottom: 4px;
     }
 
     /* ---------- Download buttons ---------- */
