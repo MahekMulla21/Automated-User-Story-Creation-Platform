@@ -16,9 +16,6 @@ MODELS = [
     "gemini-2.5-flash",
 ]
 
-
-
-
 MODEL_CONFIGS = {
 
     "gemini-3.5-flash-lite": types.GenerateContentConfig(
