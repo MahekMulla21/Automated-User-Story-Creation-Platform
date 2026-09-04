@@ -12,19 +12,19 @@ client = genai.Client(
 )
 
 MODELS = [
-    "gemini-2.5-flash",
-    "gemini-2.0-flash"
+    "gemini-3.1-flash-lite",
+    "gemini-3.6-flash",
 ]
 
 MODEL_CONFIGS = {
 
-    "gemini-2.5-flash": types.GenerateContentConfig(
+    "gemini-3.1-flash-lite": types.GenerateContentConfig(
         response_mime_type="application/json",
         max_output_tokens=32768,
         temperature=0.4,
     ),
 
-    "gemini-2.0-flash": types.GenerateContentConfig(
+    "gemini-3.6-flash": types.GenerateContentConfig(
         temperature=0.2,
         top_p=0.9,
         top_k=40,
@@ -52,7 +52,7 @@ def get_response(prompt: str) -> str:
     last_error = None
 
     for model_name in MODELS:
-        config = MODEL_CONFIGS.get(model_name, MODEL_CONFIGS["gemini-2.0-flash"])
+        config = MODEL_CONFIGS.get(model_name, MODEL_CONFIGS["gemini-3.6-flash"])
 
         for attempt in range(1, MAX_ATTEMPTS_PER_MODEL + 1):
             try:
